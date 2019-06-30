@@ -30,6 +30,10 @@ import com.arsoftwares.jmeterplugins.visualizers.backendlisteners.azuremonitor.m
 import com.arsoftwares.jmeterplugins.visualizers.backendlisteners.azuremonitor.metricmodels.Series;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * @author anuprout
+ *
+ */
 public class AzureMonitorMetricSender {
 
 	private static final Logger log = LoggerFactory.getLogger(AzureMonitorMetricSender.class);
@@ -57,7 +61,12 @@ public class AzureMonitorMetricSender {
 	
 	ObjectMapper mapper = new ObjectMapper();
 
+	/**
+	 * An http based metric sender that posts sampler metrics to Azure Monitor. 
+	 * @param testName
+	 */
 	public AzureMonitorMetricSender(String testName) {
+		
 		localHost = JMeterUtils.getLocalHostName()+" "+JMeterUtils.getLocalHostIP();
 
 		responseTimeMetric.getData().getBaseData().setMetric("ResponseTime");
@@ -80,6 +89,11 @@ public class AzureMonitorMetricSender {
 	}
 
 
+	/**
+	 * @param timestamp
+	 * @param userMetric
+	 * @throws Exception
+	 */
 	public void addUserMetric(long timestamp, UserMetric userMetric) throws Exception {
 		String timestampStr = sdf.format(new Date(System.currentTimeMillis()));
 
@@ -98,6 +112,12 @@ public class AzureMonitorMetricSender {
 
 	}
 
+	/**
+	 * @param timestamp
+	 * @param samplerName
+	 * @param metric
+	 * @throws Exception
+	 */
 	public void addResponseTimeMetric(long timestamp, String samplerName, SamplerMetric metric) throws Exception {
 		String timestampStr = sdf.format(new Date(timestamp));
 
@@ -135,6 +155,12 @@ public class AzureMonitorMetricSender {
 
 	}
 
+	/**
+	 * @param timestamp
+	 * @param samplerName
+	 * @param throughput
+	 * @throws Exception
+	 */
 	public void addThroughputMetric(long timestamp, String samplerName, Double throughput) throws Exception {
 		String timestampStr = sdf.format(new Date(timestamp));
 
@@ -211,6 +237,9 @@ public class AzureMonitorMetricSender {
 		return currentHttpRequest;
 	}
 	
+	/**
+	 * Post metrics to Azure Monitor
+	 */
 	public void sendMetrics() {
 		try {
 			sendMetrics(responseTimeMetric);
@@ -283,7 +312,12 @@ public class AzureMonitorMetricSender {
 		}
 	}
 	
-	 public void destroy() {
+	 
+	/**
+	 * Send the last metrics before shutting down. 
+	 * Then close all http connections and abort any pending requests.
+	 */
+	public void destroy() {
 	        // Give some time to send last metrics before shutting down
 	        log.info("Destroying AzureMonitorMetricSender..");
 	        try {

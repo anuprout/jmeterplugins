@@ -14,9 +14,6 @@ import java.util.regex.Pattern;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.services.FileServer;
-import org.apache.jmeter.testelement.property.JMeterProperty;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.backend.AbstractBackendListenerClient;
 import org.apache.jmeter.visualizers.backend.BackendListenerContext;
@@ -25,6 +22,16 @@ import org.apache.jmeter.visualizers.backend.UserMetric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A backend listener that posts Jmeter sampler metrics to Azure Monitor periodically. 
+ * It reads the below parameters from the test script and builds a backend listener client that posts custom metric to Azure Monitor.
+ * <br><br>
+ * azureMonitorUrl :  the Azure Monitor URL with a format https://{azureregion}.monitoring.azure.com/{AzureResourceID}/metrics
+ * @see For more info see <a href=https://docs.microsoft.com/en-us/azure/azure-monitor/platform/metrics-custom-overview> Custom metrics in Azure Monitor </a>
+ * 
+ * @author anuprout
+ *
+ */
 public class AzureMonitorBackendListenerClient extends AbstractBackendListenerClient implements Runnable{
 	
 	private static final Logger log = LoggerFactory.getLogger(AzureMonitorBackendListenerClient.class);
@@ -76,14 +83,14 @@ public class AzureMonitorBackendListenerClient extends AbstractBackendListenerCl
 		synchronized (LOCK) {
             UserMetric userMetrics = getUserMetrics();
             for (SampleResult sampleResult : sampleResults) {
-            	//log.info("Handling sampler result for "+sampleResult.getSampleLabel());
+            	log.debug("Handling sampler result for "+sampleResult.getSampleLabel());
             	try {
 	                userMetrics.add(sampleResult);
 	                
 	                //check if the sampler has been chosen to be monitored.
 	                Matcher matcher = samplersRegExFilter.matcher(sampleResult.getSampleLabel());
 	                if (!summaryOnly && (matcher.find())) {
-	                	//log.info("adding metric for "+sampleResult.getSampleLabel());
+	                	
 	                	metricsPerSampler.putIfAbsent(sampleResult.getSampleLabel(), new SamplerMetric());
 	                    metricsPerSampler.get(sampleResult.getSampleLabel()).add(sampleResult);
 	                    
@@ -98,6 +105,9 @@ public class AzureMonitorBackendListenerClient extends AbstractBackendListenerCl
 		
 	}
 
+	/* 
+	 * This is invoked during test run.This is called in a regular interval based on METRICS_SEND_INTERVAL .
+	 */
 	@Override
 	public void run() {
 		
@@ -147,6 +157,10 @@ public class AzureMonitorBackendListenerClient extends AbstractBackendListenerCl
 		
 	}
 	
+	/* This method is invoked during the set up of the test.
+	 * (non-Javadoc)
+	 * @see org.apache.jmeter.visualizers.backend.AbstractBackendListenerClient#setupTest(org.apache.jmeter.visualizers.backend.BackendListenerContext)
+	 */
 	@Override
 	public void setupTest(BackendListenerContext context) throws Exception {
 		
@@ -168,6 +182,10 @@ public class AzureMonitorBackendListenerClient extends AbstractBackendListenerCl
 		
 	}
 	
+	/* This method is invoked during shut down of the test.
+	 * (non-Javadoc)
+	 * @see org.apache.jmeter.visualizers.backend.AbstractBackendListenerClient#teardownTest(org.apache.jmeter.visualizers.backend.BackendListenerContext)
+	 */
 	@Override
 	public void teardownTest(BackendListenerContext context) throws Exception{
 		boolean cancelState = timerHandle.cancel(false);

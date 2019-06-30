@@ -14,6 +14,15 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 
+/**
+ * This is a POJO representation of JSON data that will be sent to Azure Monitor . Azure Monitor accepts below format data as a custom metric.
+ * @see <a href=https://docs.microsoft.com/en-us/azure/azure-monitor/platform/metrics-store-custom-rest-api > Azure Monitor custom metric </a>
+ *  
+ *
+ * @author anuprout
+ * 
+ *  
+ */
 @JsonPropertyOrder({
 	"time",
 	"data"
